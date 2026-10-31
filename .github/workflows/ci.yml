@@ -24,7 +24,7 @@ jobs:
     outputs:
       projects: ${{ steps.detect.outputs.projects }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: detect
@@ -53,14 +53,14 @@ jobs:
       matrix:
         project: ${{ fromJSON(needs.changed.outputs.projects) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run CI for ${{ matrix.project }}
         run: ./scripts/ci-project.sh "${{ matrix.project }}"
 
   scripts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: shellcheck
         run: |
           sudo apt-get update
