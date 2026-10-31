@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'projects/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  changed:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.detect.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base" ]; then
+            base="${{ github.event.before }}"
+          fi
+          head="${{ github.sha }}"
+          if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]] || ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+            files="$(git ls-tree -r --name-only "$head" -- 'projects/*')"
+          else
+            files="$(git diff --name-only "$base" "$head" -- 'projects/*')"
+          fi
+          projects="$(printf '%s\n' "$files" | awk -F/ 'NF > 1 { print $2 }' | sort -u | jq -Rsc 'split("\n") | map(select(length > 0))')"
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+
+  project:
+    needs: changed
+    if: ${{ needs.changed.outputs.projects != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changed.outputs.projects) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CI for ${{ matrix.project }}
+        run: ./scripts/ci-project.sh "${{ matrix.project }}"
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh templates/project-template/ci.sh
