@@ -51,3 +51,12 @@ git push -u origin HEAD
 - 自定义机器人：在飞书群添加机器人拿到 Webhook，存到仓库 Secrets 的 `FEISHU_WEBHOOK`，再启用 `.github/workflows/notify-feishu.yml`。
 
 > 公开仓库不要将 webhook、token 写入代码或提交历史。
+
+## opencode 快捷命令
+
+仓库内置两个自定义命令（`.opencode/command/`）：
+
+- `/new-project <name> <需求描述>`：读取约定 → 建分支 → 脚手架 → 分析 → 实现 → 验证 → 停在审核点。
+- `/dev <project> <需求描述>`：为已有项目开发需求，同样停在审核点。
+
+新增或修改命令后需要**重启 opencode** 才会加载。
